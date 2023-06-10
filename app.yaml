@@ -1,0 +1,3 @@
+runtime: nodejs18
+env_variables:
+  BASE_PATH: "https://final-claryan.uc.r.appspot.com"
