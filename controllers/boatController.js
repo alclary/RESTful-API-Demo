@@ -1,64 +1,40 @@
 require("dotenv").config();
-const express = require("express");
-const router = express.Router();
 const db = require("../db");
-const { get_boat, get_load, get_boats } = require("../apiFunctions");
-const {
-  Validator,
-  ValidationError,
-} = require("express-json-validator-middleware");
+const { get_boat, get_load, get_boats } = require("../functions/dbFunctions");
 const { Datastore } = require("@google-cloud/datastore");
 
-const BOAT = "Boat";
-const boat_paginate = 3;
-const base_path = process.env.BASE_PATH;
+// Constants
+const entityKey = "Boat";
+const entitiesPerPage = 3;
 const boats_path = "/boats";
+const base_path = process.env.BASE_PATH;
 
-const boatSchema = {
-  type: "object",
-  required: ["name", "type", "length"],
-  properties: {
-    name: {
-      type: "string",
-    },
-    type: {
-      type: "string",
-    },
-    length: {
-      type: "integer",
-    },
-  },
-};
-
-// initialize JSONSchema validator
-const { validate } = new Validator();
-
-// GET - retrieve all boats with pagination
-router.get("/", async (req, res) => {
+// GET / - retrieve all boats with pagination
+module.exports.boats_get = async (req, res) => {
   // if offset string var provided, use, else 0
   let offset = req.query.offset ? parseInt(req.query.offset, 10) : 0;
-  const boats = await get_boats(offset, boat_paginate);
+  const boats = await get_boats(offset, entitiesPerPage);
   if (boats[1].moreResults !== Datastore.NO_MORE_RESULTS) {
-    offset += boat_paginate;
+    offset += entitiesPerPage;
     let next = base_path + boats_path + "?offset=" + offset;
     res.status(200).json({ boats: boats[0], next });
   } else {
     res.status(200).json({ boats: boats[0] });
   }
-});
+};
 
-// GET - a single boat by ID
-router.get("/:boatId", async (req, res) => {
+// GET /:boatId- a single boat by ID
+module.exports.boat_get = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
   } else {
     res.status(200).json({ id: req.params.boatId, ...boat });
   }
-});
+};
 
-// GET - get all loads associated with boat
-router.get("/:boatId/loads", async (req, res) => {
+// GET /:boatId/loads - get all loads associated with boat
+module.exports.boat_loads_get = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
@@ -79,11 +55,11 @@ router.get("/:boatId/loads", async (req, res) => {
       loads,
     });
   }
-});
+};
 
-// POST - Create new boat
-router.post("/", validate({ body: boatSchema }), async (req, res) => {
-  const newKey = db.datastore.key(BOAT);
+// POST / - Create new boat
+module.exports.create_boat = async (req, res) => {
+  const newKey = db.datastore.key(entityKey);
   const boatData = { ...req.body };
   // If loads not provided in request, initialized emply list
   if (!boatData.loads) {
@@ -96,10 +72,10 @@ router.post("/", validate({ body: boatSchema }), async (req, res) => {
   // Save again to add the path to boat under 'self' data key
   await db.datastore.save({ key: newKey, data: boatData });
   res.status(201).json({ id: newKey.id, ...boatData });
-});
+};
 
-// PUT - add load to boat
-router.put("/:boatId/loads/:loadId", async (req, res) => {
+// PUT /:boatId/loads/:loadId - add load to boat
+module.exports.assign_load_to_boat = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   const load = await get_load(req.params.loadId);
   if (boat === undefined || load === undefined) {
@@ -117,10 +93,10 @@ router.put("/:boatId/loads/:loadId", async (req, res) => {
     await db.datastore.save(load);
     res.status(204).send();
   }
-});
+};
 
-// DELETE - remove load from boat
-router.delete("/:boatId/loads/:loadId", async (req, res) => {
+// DELETE /:boatId/loads/:loadId - remove load from boat
+module.exports.remove_load_from_boat = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   const load = await get_load(req.params.loadId);
   if (boat === undefined || load === undefined) {
@@ -143,10 +119,10 @@ router.delete("/:boatId/loads/:loadId", async (req, res) => {
     await db.datastore.save(load);
     res.status(204).send();
   }
-});
+};
 
-// DELETE - delete a given boat
-router.delete("/:boatId", async (req, res) => {
+// DELETE /:boatId - delete a given boat
+module.exports.delete_boat = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
@@ -158,23 +134,11 @@ router.delete("/:boatId", async (req, res) => {
       await db.datastore.save(load);
     });
     // Handle boat delete
-    const boatKey = db.datastore.key([BOAT, parseInt(req.params.boatId, 10)]);
+    const boatKey = db.datastore.key([
+      entityKey,
+      parseInt(req.params.boatId, 10),
+    ]);
     await db.datastore.delete(boatKey);
     res.status(204).send();
   }
-});
-
-// Error handler middleware for validation errors.
-router.use((error, request, response, next) => {
-  if (error instanceof ValidationError) {
-    response.status(400).json({
-      Error:
-        "The request object is missing at least one of the required attributes",
-    });
-    next();
-  } else {
-    next(error);
-  }
-});
-
-module.exports = router;
+};
