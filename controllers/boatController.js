@@ -1,6 +1,6 @@
 require("dotenv").config();
 const db = require("../db");
-const { get_boat, get_load, get_boats } = require("../functions/dbFunctions");
+const { get_entity, get_entities } = require("../functions/dbFunctions");
 
 // Constants
 const entityKey = "Boat";
@@ -9,7 +9,11 @@ const base_path = process.env.BASE_PATH;
 
 // GET / - retrieve all boats with pagination
 module.exports.boats_get = async (req, res) => {
-  const [boats, cursor] = await get_boats(req.auth.sub, req.query?.cursor);
+  const [boats, cursor] = await get_entities(
+    entityKey,
+    req.auth.sub,
+    req.query?.cursor
+  );
   if (cursor) {
     next = base_path + boats_path + "?cursor=" + cursor;
     res.status(200).json({ boats, next });
@@ -20,7 +24,7 @@ module.exports.boats_get = async (req, res) => {
 
 // GET /:boatId- a single boat by ID
 module.exports.boat_get = async (req, res) => {
-  const boat = await get_boat(req.params.boatId);
+  const boat = await get_entity(entityKey, req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this ID exists" });
   } else if (boat.owner !== req.auth.sub) {
@@ -48,7 +52,7 @@ module.exports.create_boat = async (req, res) => {
 
 // PUT /:boatId/loads/:loadId - add load to boat
 module.exports.assign_load_to_boat = async (req, res) => {
-  const boat = await get_boat(req.params.boatId);
+  const boat = await get_entity(entityKey, req.params.boatId);
   const load = await get_load(req.params.loadId);
   if (boat === undefined || load === undefined) {
     res
@@ -69,7 +73,7 @@ module.exports.assign_load_to_boat = async (req, res) => {
 
 // DELETE /:boatId/loads/:loadId - remove load from boat
 module.exports.remove_load_from_boat = async (req, res) => {
-  const boat = await get_boat(req.params.boatId);
+  const boat = await get_entity(entityKey, req.params.boatId);
   const load = await get_load(req.params.loadId);
   if (boat === undefined || load === undefined) {
     res.status(404).json({
@@ -95,7 +99,7 @@ module.exports.remove_load_from_boat = async (req, res) => {
 
 // DELETE /:boatId - delete a given boat
 module.exports.delete_boat = async (req, res) => {
-  const boat = await get_boat(req.params.boatId);
+  const boat = await get_entity(entityKey, req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
   } else {

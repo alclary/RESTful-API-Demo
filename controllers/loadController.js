@@ -1,6 +1,6 @@
 require("dotenv").config();
 const db = require("../db");
-const { get_load, get_loads, get_boat } = require("../functions/dbFunctions");
+const { get_entity, get_entities } = require("../functions/dbFunctions");
 
 // Constants
 const entityKey = "Load";
@@ -9,7 +9,12 @@ const base_path = process.env.BASE_PATH;
 
 // GET / - retrieve all loads with pagination
 module.exports.loads_get = async (req, res) => {
-  const [loads, cursor] = await get_loads(req.auth.sub, req.query?.cursor);
+  // Loads do not require owner parameter; null passed
+  const [loads, cursor] = await get_entities(
+    entityKey,
+    null,
+    req.query?.cursor
+  );
   if (cursor) {
     next = base_path + loads_path + "?cursor=" + cursor;
     res.status(200).json({ loads, next });
@@ -20,7 +25,7 @@ module.exports.loads_get = async (req, res) => {
 
 // GET /:loadId - retrieve specific load
 module.exports.load_get = async (req, res) => {
-  const load = await get_load(req.params.loadId);
+  const load = await get_entity(entityKey, req.params.loadId);
   if (load === undefined) {
     res.status(404).json({ Error: "No load with this load_id exists" });
   } else {
@@ -46,12 +51,12 @@ module.exports.create_load = async (req, res) => {
 
 // DELETE /:loadId - delete a given load
 module.exports.delete_load = async (req, res) => {
-  const load = await get_load(req.params.loadId);
+  const load = await get_entity(entityKey, req.params.loadId);
   if (load === undefined) {
     res.status(404).json({ Error: "No load with this load_id exists" });
   } else {
     // Handle associated assignment
-    const boat = await get_boat(load.carrier.id);
+    const boat = await get_entity("Boat", load.carrier.id);
     boat.loads = boat.loads.filter((load) => load.id != req.params.loadId);
     db.datastore.save(boat);
     // Handle load delete
