@@ -1,6 +1,8 @@
 const db = require("../db");
+const { Datastore } = require("@google-cloud/datastore");
 
 // Datastore entity names
+const entitiesPerPage = 5;
 const BOAT = "Boat";
 const LOAD = "Load";
 const USER = "User";
@@ -11,10 +13,25 @@ module.exports.get_boat = async (id) => {
   return result[0];
 };
 
-module.exports.get_boats = async (offset, limit) => {
-  let q = db.datastore.createQuery(BOAT).offset(offset).limit(limit);
-  const boats = await db.datastore.runQuery(q);
-  return [boats[0].map(db.fromDatastore), boats[1]];
+module.exports.get_boats = async (owner, cursor) => {
+  let q = db.datastore
+    .createQuery(BOAT)
+    .filter("owner", "=", owner)
+    .limit(entitiesPerPage);
+  if (cursor) {
+    q = q.start(cursor);
+  }
+
+  const results = await db.datastore.runQuery(q);
+  const boats = results[0];
+  const info = results[1];
+  // NOTE: this is broken with datastore emulation; should work in production;
+  // see https://github.com/googleapis/google-cloud-node/issues/2846
+  if (info.moreResults !== Datastore.NO_MORE_RESULTS) {
+    return [boats.map(db.attachId), info.endCursor];
+  } else {
+    return [boats.map(db.attachId), null];
+  }
 };
 
 module.exports.get_load = async (id) => {
@@ -23,16 +40,29 @@ module.exports.get_load = async (id) => {
   return result[0];
 };
 
-module.exports.get_loads = async (offset, limit) => {
-  let q = db.datastore.createQuery(LOAD).offset(offset).limit(limit);
-  const loads = await db.datastore.runQuery(q);
-  return [loads[0].map(db.fromDatastore), loads[1]];
+// TODO refactor with get_boats above -> get_entities
+module.exports.get_loads = async (cursor) => {
+  let q = db.datastore.createQuery(LOAD).limit(entitiesPerPage);
+  if (cursor) {
+    q = q.start(cursor);
+  }
+  const results = await db.datastore.runQuery(q);
+  const loads = results[0];
+  const info = results[1];
+  // NOTE: this is broken with datastore emulation; should work in production;
+  // see https://github.com/googleapis/google-cloud-node/issues/2846
+  if (info.moreResults !== Datastore.NO_MORE_RESULTS) {
+    return [loads.map(db.attachId), info.endCursor];
+  } else {
+    return [loads.map(db.attachId), null];
+  }
 };
 
-module.exports.get_load_w_boat = async (boatId) => {
-  const q = db.datastore
-    .createQuery(LOAD)
-    .filter("current_boat", "=", parseInt(boatId, 10));
-  const loads = await db.datastore.runQuery(q);
-  return loads[0].map(db.fromDatastore);
-};
+// TODO potentially delete
+// module.exports.get_load_w_boat = async (boatId) => {
+//   const q = db.datastore
+//     .createQuery(LOAD)
+//     .filter("current_boat", "=", parseInt(boatId, 10));
+//   const results = await db.datastore.runQuery(q);
+//   return results[0].map(db.attachId);
+// };

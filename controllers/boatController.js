@@ -1,25 +1,20 @@
 require("dotenv").config();
 const db = require("../db");
 const { get_boat, get_load, get_boats } = require("../functions/dbFunctions");
-const { Datastore } = require("@google-cloud/datastore");
 
 // Constants
 const entityKey = "Boat";
-const entitiesPerPage = 3;
 const boats_path = "/boats";
 const base_path = process.env.BASE_PATH;
 
 // GET / - retrieve all boats with pagination
 module.exports.boats_get = async (req, res) => {
-  // if offset string var provided, use, else 0
-  let offset = req.query.offset ? parseInt(req.query.offset, 10) : 0;
-  const boats = await get_boats(offset, entitiesPerPage);
-  if (boats[1].moreResults !== Datastore.NO_MORE_RESULTS) {
-    offset += entitiesPerPage;
-    let next = base_path + boats_path + "?offset=" + offset;
-    res.status(200).json({ boats: boats[0], next });
+  const [boats, cursor] = await get_boats(req.auth.sub, req.query?.cursor);
+  if (cursor) {
+    next = base_path + boats_path + "?cursor=" + cursor;
+    res.status(200).json({ boats, next });
   } else {
-    res.status(200).json({ boats: boats[0] });
+    res.status(200).json({ boats });
   }
 };
 
@@ -27,44 +22,21 @@ module.exports.boats_get = async (req, res) => {
 module.exports.boat_get = async (req, res) => {
   const boat = await get_boat(req.params.boatId);
   if (boat === undefined) {
-    res.status(404).json({ Error: "No boat with this boat_id exists" });
+    res.status(404).json({ Error: "No boat with this ID exists" });
+  } else if (boat.owner !== req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat." });
   } else {
     res.status(200).json({ id: req.params.boatId, ...boat });
-  }
-};
-
-// GET /:boatId/loads - get all loads associated with boat
-module.exports.boat_loads_get = async (req, res) => {
-  const boat = await get_boat(req.params.boatId);
-  if (boat === undefined) {
-    res.status(404).json({ Error: "No boat with this boat_id exists" });
-  } else {
-    loads = await Promise.all(
-      boat.loads.map(async (load_stub) => {
-        const load = await get_load(load_stub.id);
-        return {
-          item: load.item,
-          creation_date: load.creation_date,
-          volume: load.volume,
-          self: load.self,
-        };
-      })
-    );
-    res.status(200).json({
-      length: boat.loads.length,
-      loads,
-    });
   }
 };
 
 // POST / - Create new boat
 module.exports.create_boat = async (req, res) => {
   const newKey = db.datastore.key(entityKey);
-  const boatData = { ...req.body };
-  // If loads not provided in request, initialized emply list
-  if (!boatData.loads) {
-    boatData.loads = [];
-  }
+  const boatData = { ...req.body, owner: req.auth.sub };
+  // No loads are assigned to the boat at creation
+  // TODO implement optional load assignment at creation
+  boatData.loads = [];
   // Save first to initialize the new key entry (required for ID)
   await db.datastore.save({ key: newKey, data: boatData });
   // Generate path to boat
