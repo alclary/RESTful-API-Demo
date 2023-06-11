@@ -30,24 +30,4 @@ module.exports.schemas = {
       },
     },
   },
-  // JSON Schema for User
-  userSchema: {
-    type: "object",
-    required: ["name", "sub", "email", "created"],
-    additionalProperties: false,
-    properties: {
-      name: {
-        type: "string",
-      },
-      sub: {
-        type: "string",
-      },
-      email: {
-        type: "string",
-      },
-      created: {
-        type: "string",
-      },
-    },
-  },
 };

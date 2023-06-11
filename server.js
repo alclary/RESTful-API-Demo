@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const { auth } = require("express-openid-connect");
 const { errorHandling } = require("./functions/errorHandling.js");
+const { ensure_user_in_db } = require("./functions/dbFunctions.js");
 
 // Import Routes
 const boats = require("./routes/boatRoutes.js");
@@ -39,6 +40,9 @@ app.use("/users", users);
 app.get("/", (req, res) => {
   res.set("Content-Type", "text/html");
   if (req.oidc.isAuthenticated()) {
+    // Ensure user in DB
+    ensure_user_in_db(req.oidc.user);
+    // Provide landing page w/ user info
     res.send(`
     <h1>Portfolio Project: RESTful API with Authorization</h1>
     <p>Anthony L Clary (claryan)</p>
@@ -49,6 +53,7 @@ app.get("/", (req, res) => {
     </ul>
     <a href="${process.env.BASE_PATH}/logout">Logout</a>`);
   } else {
+    // Provide landing page w/ login link
     res.send(`
     <h1>Portfolio Project: RESTful API with Authorization</h1>
     <a href="${process.env.BASE_PATH}/login">Login</a>`);

@@ -42,3 +42,21 @@ module.exports.get_entities_paginate = async (entity, owner, cursor) => {
     return [entities.map(db.attachId), null];
   }
 };
+
+module.exports.ensure_user_in_db = async (oidcUserObj) => {
+  let q = db.datastore.createQuery("User").filter("sub", "=", oidcUserObj.sub);
+  const results = await db.datastore.runQuery(q);
+  // User does not exist in database; create new user
+  if (results[0].length === 0) {
+    const newUser = {
+      sub: oidcUserObj.sub,
+      email: oidcUserObj.email,
+      name: oidcUserObj.name,
+    };
+    const newUserKey = db.datastore.key("User");
+    await db.datastore.save({ key: newUserKey, data: newUser });
+    return;
+  }
+  // User exists in database; do nothing
+  return;
+};
