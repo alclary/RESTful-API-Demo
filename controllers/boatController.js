@@ -1,6 +1,9 @@
 require("dotenv").config();
 const db = require("../db");
-const { get_entity, get_entities } = require("../functions/dbFunctions");
+const {
+  get_entity,
+  get_entities_paginate,
+} = require("../functions/dbFunctions");
 
 // Constants
 const entityKey = "Boat";
@@ -9,7 +12,7 @@ const base_path = process.env.BASE_PATH;
 
 // GET / - retrieve all boats with pagination
 module.exports.boats_get = async (req, res) => {
-  const [boats, cursor] = await get_entities(
+  const [boats, cursor] = await get_entities_paginate(
     entityKey,
     req.auth.sub,
     req.query?.cursor

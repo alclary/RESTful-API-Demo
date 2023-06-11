@@ -13,7 +13,16 @@ module.exports.get_entity = async (entity, id) => {
   return result[0];
 };
 
-module.exports.get_entities = async (entity, owner, cursor) => {
+module.exports.get_entities = async (entity, owner) => {
+  let q = db.datastore.createQuery(entity);
+  if (owner) {
+    q = q.filter("owner", "=", owner);
+  }
+  const results = await db.datastore.runQuery(q);
+  return results[0].map(db.attachId);
+};
+
+module.exports.get_entities_paginate = async (entity, owner, cursor) => {
   let q = db.datastore.createQuery(entity).limit(entitiesPerPage);
   if (owner) {
     q = q.filter("owner", "=", owner);
