@@ -6,7 +6,7 @@ module.exports.errorHandling = {
     if (err instanceof ValidationError) {
       res.status(400).json({
         Error:
-          "The req object is missing at least one of the required attributes",
+          "The provided body attributes did not match the required schema.",
       });
       next();
     } else {

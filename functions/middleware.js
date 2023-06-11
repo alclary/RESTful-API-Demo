@@ -24,6 +24,7 @@ const requireJwtAuth = expressjwt({ ...jwtConfig });
 const boatSchema = {
   type: "object",
   required: ["name", "type", "length"],
+  additionalProperties: false,
   properties: {
     name: {
       type: "string",
@@ -39,15 +40,13 @@ const boatSchema = {
 // JSON Schema for Load
 const loadSchema = {
   type: "object",
-  required: ["volume", "item", "creation_date"],
+  required: ["volume", "item"],
+  additionalProperties: false,
   properties: {
     volume: {
       type: "integer",
     },
     item: {
-      type: "string",
-    },
-    creation_date: {
       type: "string",
     },
   },
