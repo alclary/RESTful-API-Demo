@@ -14,7 +14,7 @@ const app = express();
 const port = 8080;
 
 // Auth0 configuration
-const autoConfig = {
+const authConfig = {
   authRequired: false,
   auth0Logout: true,
   baseURL: process.env.BASE_PATH,
@@ -28,7 +28,7 @@ app.use(cors({ origin: "*" }));
 
 // Middlewares
 app.use(express.json());
-app.use(auth(autoConfig)); // attaches /login, /logout, /callback to base url
+app.use(auth(authConfig)); // attaches /login, /logout, /callback to base url
 
 //Configure routes
 app.use("/boats", boats);
@@ -56,7 +56,8 @@ app.get("/", (req, res) => {
 });
 
 // Error handling
-app.use(errorHandling.validateJSONSchema);
+app.use(errorHandling.invalidJSONSchema);
+app.use(errorHandling.invalidJWT);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
