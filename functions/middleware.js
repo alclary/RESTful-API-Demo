@@ -1,8 +1,10 @@
 require("dotenv").config();
 const { Validator } = require("express-json-validator-middleware");
-const { validate } = new Validator();
 const { expressjwt } = require("express-jwt");
 const jwksRsa = require("jwks-rsa");
+const { schemas } = require("./schemas");
+
+const { validate } = new Validator();
 
 // exprestjwt middleware config
 let jwtConfig = {
@@ -20,39 +22,9 @@ let jwtConfig = {
 const requireJwtAuth = expressjwt({ ...jwtConfig });
 // const decodeJwtOnly = expressjwt({ ...jwtConfig, credentialsRequired: false });
 
-// JSON Schema for Boat
-const boatSchema = {
-  type: "object",
-  required: ["name", "type", "length"],
-  additionalProperties: false,
-  properties: {
-    name: {
-      type: "string",
-    },
-    type: {
-      type: "string",
-    },
-    length: {
-      type: "integer",
-    },
-  },
-};
-// JSON Schema for Load
-const loadSchema = {
-  type: "object",
-  required: ["volume", "item"],
-  additionalProperties: false,
-  properties: {
-    volume: {
-      type: "integer",
-    },
-    item: {
-      type: "string",
-    },
-  },
-};
-
 module.exports.middleware = {
+  validateBoatSchema: validate({ body: schemas.boatSchema }),
+  validateLoadSchema: validate({ body: schemas.loadSchema }),
   validateBoatSchema: validate({ body: boatSchema }),
   validateLoadSchema: validate({ body: loadSchema }),
   requireJwtAuth,
