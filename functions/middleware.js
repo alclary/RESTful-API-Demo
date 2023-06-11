@@ -25,7 +25,6 @@ const requireJwtAuth = expressjwt({ ...jwtConfig });
 module.exports.middleware = {
   validateBoatSchema: validate({ body: schemas.boatSchema }),
   validateLoadSchema: validate({ body: schemas.loadSchema }),
-  validateBoatSchema: validate({ body: boatSchema }),
-  validateLoadSchema: validate({ body: loadSchema }),
+  validateUserSchema: validate({ body: schemas.userSchema }),
   requireJwtAuth,
 };
