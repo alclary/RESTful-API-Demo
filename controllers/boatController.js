@@ -12,16 +12,16 @@ const base_path = process.env.BASE_PATH;
 
 // GET / - retrieve all boats with pagination
 module.exports.boats_get = async (req, res) => {
-  const [boats, cursor] = await get_entities_paginate(
+  const [boats, cursor, count] = await get_entities_paginate(
     entityKey,
     req.auth.sub,
     req.query?.cursor
   );
   if (cursor) {
     next = base_path + boats_path + "?cursor=" + cursor;
-    res.status(200).json({ boats, next });
+    res.status(200).json({ boats, next, count });
   } else {
-    res.status(200).json({ boats });
+    res.status(200).json({ boats, count });
   }
 };
 

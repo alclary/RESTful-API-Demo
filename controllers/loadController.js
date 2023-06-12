@@ -13,16 +13,16 @@ const base_path = process.env.BASE_PATH;
 // GET / - retrieve all loads with pagination
 module.exports.loads_get = async (req, res) => {
   // Loads do not require owner parameter; null passed
-  const [loads, cursor] = await get_entities_paginate(
+  const [loads, cursor, count] = await get_entities_paginate(
     entityKey,
     null,
     req.query?.cursor
   );
   if (cursor) {
     next = base_path + loads_path + "?cursor=" + cursor;
-    res.status(200).json({ loads, next });
+    res.status(200).json({ loads, next, count });
   } else {
-    res.status(200).json({ loads });
+    res.status(200).json({ loads, count });
   }
 };
 

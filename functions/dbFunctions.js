@@ -3,9 +3,6 @@ const { Datastore } = require("@google-cloud/datastore");
 
 // Datastore entity names
 const entitiesPerPage = 5;
-// const BOAT = "Boat";
-// const LOAD = "Load";
-// const USER = "User";
 
 module.exports.get_entity = async (entity, id) => {
   const key = db.datastore.key([entity, parseInt(id, 10)]);
@@ -34,12 +31,22 @@ module.exports.get_entities_paginate = async (entity, owner, cursor) => {
   const results = await db.datastore.runQuery(q);
   const entities = results[0];
   const info = results[1];
+
+  // Inefficient method of obtaining total count of entities
+  let cq = db.datastore.createQuery(entity);
+  if (owner) {
+    cq = cq.filter("owner", "=", owner);
+  }
+
+  const fullResults = await db.datastore.runQuery(cq);
+  const count = fullResults[0].length;
+
   // NOTE: this is broken with datastore emulation; should work in production;
   // see https://github.com/googleapis/google-cloud-node/issues/2846
   if (info.moreResults !== Datastore.NO_MORE_RESULTS) {
-    return [entities.map(db.attachId), info.endCursor];
+    return [entities.map(db.attachId), info.endCursor, count];
   } else {
-    return [entities.map(db.attachId), null];
+    return [entities.map(db.attachId), null, count];
   }
 };
 
