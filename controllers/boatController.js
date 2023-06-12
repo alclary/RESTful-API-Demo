@@ -3,6 +3,7 @@ const db = require("../db");
 const {
   get_entity,
   get_entities_paginate,
+  get_user_with_sub,
 } = require("../functions/dbFunctions");
 
 // Constants
@@ -40,16 +41,18 @@ module.exports.boat_get = async (req, res) => {
 // POST / - Create new boat
 module.exports.create_boat = async (req, res) => {
   const newKey = db.datastore.key(entityKey);
-  const boatData = { ...req.body, owner: req.auth.sub };
-  // No loads are assigned to the boat at creation
-  // TODO implement optional load assignment at creation
-  boatData.loads = [];
-  // Save first to initialize the new key entry (required for ID)
+  const boatData = { ...req.body, owner: req.auth.sub, loads: [] };
+
+  // Save to initialize ID; generate path; save again to add path
   await db.datastore.save({ key: newKey, data: boatData });
-  // Generate path to boat
   boatData.self = base_path + boats_path + "/" + newKey.id;
-  // Save again to add the path to boat under 'self' data key
   await db.datastore.save({ key: newKey, data: boatData });
+
+  // Add boat to user's boats array
+  const user = await get_user_with_sub(req.auth.sub);
+  user.boats.push({ id: newKey.id, self: boatData.self });
+  await db.datastore.save(user);
+
   res.status(201).json({ id: newKey.id, ...boatData });
 };
 
@@ -106,12 +109,16 @@ module.exports.delete_boat = async (req, res) => {
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
   } else {
-    // Hanlde load unassignment
+    // Handle load unassignment
     boat.loads.forEach(async (load_stub) => {
       const load = await get_load(load_stub.id);
       load.carrier = null;
       await db.datastore.save(load);
     });
+    // Handle removal of boat from user's boats array
+    const user = await get_user_with_sub(boat.owner);
+    user.boats = user.boats.filter((boat_stub) => boat_stub.id != boat.id);
+    await db.datastore.save(user);
     // Handle boat delete
     const boatKey = db.datastore.key([
       entityKey,

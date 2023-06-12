@@ -51,6 +51,12 @@ module.exports.get_entities_paginate = async (entity, owner, cursor) => {
   }
 };
 
+module.exports.get_user_with_sub = async (sub) => {
+  let q = db.datastore.createQuery("User").filter("sub", "=", sub);
+  const results = await db.datastore.runQuery(q);
+  return results[0][0];
+};
+
 module.exports.ensure_user_in_db = async (oidcUserObj) => {
   let q = db.datastore.createQuery("User").filter("sub", "=", oidcUserObj.sub);
   const results = await db.datastore.runQuery(q);
