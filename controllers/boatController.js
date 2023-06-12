@@ -64,6 +64,8 @@ module.exports.assign_load_to_boat = async (req, res) => {
     res
       .status(404)
       .json({ Error: "The specified boat and/or load does not exist" });
+  } else if (boat.id != req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat." });
   } else if (load.carrier) {
     res
       .status(403)
@@ -86,6 +88,8 @@ module.exports.remove_load_from_boat = async (req, res) => {
       Error:
         "No boat with this boat_id is loaded with the load with this load_id",
     });
+  } else if (boat.id != req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat." });
   } else if (
     // If the current boat's array of loads does NOT contain this load ID
     boat.loads.length === 0
@@ -108,6 +112,8 @@ module.exports.delete_boat = async (req, res) => {
   const boat = await get_entity(entityKey, req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
+  } else if (boat.id != req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat" });
   } else {
     // Handle load unassignment
     boat.loads.forEach(async (load_stub) => {
