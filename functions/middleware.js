@@ -20,10 +20,11 @@ let jwtConfig = {
 
 // expressjwt middleware alternatives
 const requireJwtAuth = expressjwt({ ...jwtConfig });
-// const decodeJwtOnly = expressjwt({ ...jwtConfig, credentialsRequired: false });
+const decodeJwtOnly = expressjwt({ ...jwtConfig, credentialsRequired: false });
 
 module.exports.middleware = {
   validateBoatSchema: validate({ body: schemas.boatSchema }),
   validateLoadSchema: validate({ body: schemas.loadSchema }),
   requireJwtAuth,
+  decodeJwtOnly,
 };
