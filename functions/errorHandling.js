@@ -16,7 +16,7 @@ module.exports.errorHandling = {
   // Error handler middleware for JWT validation errors.
   invalidJWT: (err, req, res, next) => {
     if (err.name === "UnauthorizedError") {
-      res.status(401).send("JWT is invalid or unauthorized.");
+      res.status(401).json({ Error: "JWT is invalid or unauthorized." });
     } else {
       next(err);
     }
