@@ -1,3 +1,4 @@
+require("dotenv").config();
 const db = require("../db");
 const { Datastore } = require("@google-cloud/datastore");
 
@@ -55,13 +56,16 @@ module.exports.ensure_user_in_db = async (oidcUserObj) => {
   const results = await db.datastore.runQuery(q);
   // User does not exist in database; create new user
   if (results[0].length === 0) {
-    const newUser = {
+    const newUserData = {
       sub: oidcUserObj.sub,
       email: oidcUserObj.email,
       name: oidcUserObj.name,
+      boats: [],
     };
     const newUserKey = db.datastore.key("User");
-    await db.datastore.save({ key: newUserKey, data: newUser });
+    await db.datastore.save({ key: newUserKey, data: newUserData });
+    newUserData.self = process.env.BASE_PATH + "/users/" + newUserKey.id;
+    await db.datastore.save({ key: newUserKey, data: newUserData });
     return;
   }
   // User exists in database; do nothing
