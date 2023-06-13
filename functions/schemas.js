@@ -19,7 +19,7 @@ module.exports.schemas = {
   // JSON Schema for Load
   loadSchema: {
     type: "object",
-    required: ["volume", "item"],
+    required: ["volume", "item", "hazardous"],
     additionalProperties: false,
     properties: {
       volume: {
@@ -27,6 +27,9 @@ module.exports.schemas = {
       },
       item: {
         type: "string",
+      },
+      hazardous: {
+        type: "boolean",
       },
     },
   },
