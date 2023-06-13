@@ -79,6 +79,20 @@ module.exports.assign_load_to_boat = async (req, res) => {
   }
 };
 
+// PATCH /:boatId - update a given boat
+module.exports.update_boat = async (req, res) => {
+  const boat = await get_entity(entityKey, req.params.boatId);
+  if (boat === undefined) {
+    res.status(404).json({ Error: "No boat with this ID exists" });
+  } else if (boat.owner !== req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat" });
+  } else {
+    const updatedBoat = { ...boat, ...req.body };
+    await db.datastore.save(updatedBoat);
+    res.status(204).send();
+  }
+};
+
 // DELETE /:boatId/loads/:loadId - remove load from boat
 module.exports.remove_load_from_boat = async (req, res) => {
   const boat = await get_entity(entityKey, req.params.boatId);

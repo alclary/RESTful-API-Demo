@@ -11,11 +11,15 @@ router.get("/:boatId", middleware.requireJwtAuth, boatController.boat_get);
 // POST - Create new boat
 router.post(
   "/",
-  [middleware.requireJwtAuth, middleware.validateBoatSchema],
+  [middleware.requireJwtAuth, middleware.validateNewBoat],
   boatController.create_boat
 );
 // PATCH - update a given boat
-// TODO PATCH boat
+router.patch(
+  "/:boatId",
+  [middleware.requireJwtAuth, middleware.validateUpdateBoat],
+  boatController.update_boat
+);
 // PUT - add load to boat
 router.put(
   "/:boatId/loads/:loadId",

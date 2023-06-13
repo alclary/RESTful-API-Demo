@@ -51,6 +51,17 @@ module.exports.create_load = async (req, res) => {
   await db.datastore.save({ key: newKey, data: loadData });
   res.status(201).json({ id: newKey.id, ...loadData });
 };
+// PATCH /:loadId - update a given load
+module.exports.update_load = async (req, res) => {
+  const load = await get_entity(entityKey, req.params.loadId);
+  if (load === undefined) {
+    res.status(404).json({ Error: "No load with this load_id exists" });
+  } else {
+    const updatedLoad = { ...load, ...req.body };
+    await db.datastore.save(updatedLoad);
+    res.status(204).send();
+  }
+};
 
 // DELETE /:loadId - delete a given load
 module.exports.delete_load = async (req, res) => {
