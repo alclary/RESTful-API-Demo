@@ -32,7 +32,7 @@ module.exports.boat_get = async (req, res) => {
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this ID exists" });
   } else if (boat.owner !== req.auth.sub) {
-    res.status(403).json({ Error: "You are not the owner of this boat." });
+    res.status(403).json({ Error: "You are not the owner of this boat" });
   } else {
     res.status(200).json({ id: req.params.boatId, ...boat });
   }
@@ -59,17 +59,17 @@ module.exports.create_boat = async (req, res) => {
 // PUT /:boatId/loads/:loadId - add load to boat
 module.exports.assign_load_to_boat = async (req, res) => {
   const boat = await get_entity(entityKey, req.params.boatId);
-  const load = await get_load(req.params.loadId);
+  const load = await get_entity("Load", req.params.loadId);
   if (boat === undefined || load === undefined) {
     res
       .status(404)
       .json({ Error: "The specified boat and/or load does not exist" });
-  } else if (boat.id != req.auth.sub) {
-    res.status(403).json({ Error: "You are not the owner of this boat." });
   } else if (load.carrier) {
     res
       .status(403)
       .json({ Error: "The load is already loaded on another boat" });
+  } else if (boat.owner != req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat" });
   } else {
     boat.loads.push({ id: req.params.loadId, self: load.self });
     await db.datastore.save(boat);
@@ -82,14 +82,14 @@ module.exports.assign_load_to_boat = async (req, res) => {
 // DELETE /:boatId/loads/:loadId - remove load from boat
 module.exports.remove_load_from_boat = async (req, res) => {
   const boat = await get_entity(entityKey, req.params.boatId);
-  const load = await get_load(req.params.loadId);
+  const load = await get_entity("Load", req.params.loadId);
   if (boat === undefined || load === undefined) {
     res.status(404).json({
       Error:
         "No boat with this boat_id is loaded with the load with this load_id",
     });
-  } else if (boat.id != req.auth.sub) {
-    res.status(403).json({ Error: "You are not the owner of this boat." });
+  } else if (boat.owner != req.auth.sub) {
+    res.status(403).json({ Error: "You are not the owner of this boat" });
   } else if (
     // If the current boat's array of loads does NOT contain this load ID
     boat.loads.length === 0
@@ -112,18 +112,20 @@ module.exports.delete_boat = async (req, res) => {
   const boat = await get_entity(entityKey, req.params.boatId);
   if (boat === undefined) {
     res.status(404).json({ Error: "No boat with this boat_id exists" });
-  } else if (boat.id != req.auth.sub) {
+  } else if (boat.owner != req.auth.sub) {
     res.status(403).json({ Error: "You are not the owner of this boat" });
   } else {
     // Handle load unassignment
     boat.loads.forEach(async (load_stub) => {
-      const load = await get_load(load_stub.id);
+      const load = await get_entity("Load", load_stub.id);
       load.carrier = null;
       await db.datastore.save(load);
     });
     // Handle removal of boat from user's boats array
     const user = await get_user_with_sub(boat.owner);
-    user.boats = user.boats.filter((boat_stub) => boat_stub.id != boat.id);
+    user.boats = user.boats.filter(
+      (boat_stub) => boat_stub.id != req.params.boatId
+    );
     await db.datastore.save(user);
     // Handle boat delete
     const boatKey = db.datastore.key([

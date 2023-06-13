@@ -5,8 +5,7 @@ module.exports.errorHandling = {
   invalidJSONSchema: (err, req, res, next) => {
     if (err instanceof ValidationError) {
       res.status(400).json({
-        Error:
-          "The provided body attributes did not match the required schema.",
+        Error: "The provided body attributes did not match the required schema",
       });
       next();
     } else {
@@ -16,7 +15,7 @@ module.exports.errorHandling = {
   // Error handler middleware for JWT validation errors.
   invalidJWT: (err, req, res, next) => {
     if (err.name === "UnauthorizedError") {
-      res.status(401).json({ Error: "JWT is invalid or unauthorized." });
+      res.status(401).json({ Error: "JWT is invalid or unauthorized" });
     } else {
       next(err);
     }
