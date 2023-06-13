@@ -3,7 +3,6 @@ const { Validator } = require("express-json-validator-middleware");
 const { expressjwt } = require("express-jwt");
 const jwksRsa = require("jwks-rsa");
 const { schemas } = require("./schemas");
-
 const { validate } = new Validator();
 
 // exprestjwt middleware config
@@ -23,8 +22,10 @@ const requireJwtAuth = expressjwt({ ...jwtConfig });
 const decodeJwtOnly = expressjwt({ ...jwtConfig, credentialsRequired: false });
 
 module.exports.middleware = {
-  validateBoatSchema: validate({ body: schemas.boatSchema }),
-  validateLoadSchema: validate({ body: schemas.loadSchema }),
+  validateNewBoat: validate({ body: schemas.boatCreateSchema }),
+  validateNewLoad: validate({ body: schemas.loadCreateSchema }),
+  validateUpdateBoat: validate({ body: schemas.boatUpdateSchema }),
+  validateUpdateLoad: validate({ body: schemas.loadUpdateSchema }),
   requireJwtAuth,
   decodeJwtOnly,
 };
